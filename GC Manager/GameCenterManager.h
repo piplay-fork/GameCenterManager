@@ -1,8 +1,9 @@
 //
 //  GameCenterManager.h
 //
-//  Created by Nihal Ahmed on 12-03-16. Updated by iRare Media on 7/2/13.
+//  Created by Nihal Ahmed on 12-03-16. Updated by iRare Media on 2/2/14.
 //  Copyright (c) 2012 NABZ Software. All rights reserved.
+//  Copyright (c) 2014 iRare Media. All rights reserved.
 //
 
 // GameCenterManager uses ARC, check for compatibility before building
@@ -25,16 +26,32 @@
 #define kGameCenterManagerDataFile @"GameCenterManager.plist"
 #define kGameCenterManagerDataPath [LIBRARY_FOLDER stringByAppendingPathComponent:kGameCenterManagerDataFile]
 
-#import <Foundation/Foundation.h>
-#import <GameKit/GameKit.h>
+// GameCenterManager prefers modules, if enabled they will be used.
+// Enable modules in your project Build Settings for numerous benefits over traditional importing.
+#if !__has_feature(objc_modules)
+    #import <Foundation/Foundation.h>
+    #import <GameKit/GameKit.h>
 
-#if TARGET_OS_IPHONE
-    #import <UIKit/UIKit.h>
+    #if TARGET_OS_IPHONE
+        #import <UIKit/UIKit.h>
+    #else
+        #import <Cocoa/Cocoa.h>
+    #endif
 #else
-    #import <Cocoa/Cocoa.h>
+    @import Foundation;
+    @import GameKit;
+
+    #if TARGET_OS_IPHONE
+        @import UIKit;
+    #else
+        @import Cocoa;
+    #endif
 #endif
 
+// Import Reachability (for network checks)
 #import "Reachability.h"
+
+// Import NSDataAES256 (for optional local encryption)
 #import "NSDataAES256.h"
 
 
@@ -58,7 +75,9 @@ enum {
     /// There is no active internet connection for the requested operation
     GCMErrorInternetNotAvailable = 4,
     /// The achievement data submitted was not valid because there were missing parameters
-    GCMErrorAchievementDataMissing = 5
+    GCMErrorAchievementDataMissing = 5,
+    /// The multiplayer data could not be sent with the specified connection type because it was too large
+    GCMErrorMultiplayerDataPacketTooLarge = 6
 };
 /// GameCenterManager error codes that may be passed in a completion handler's error parameter
 typedef NSInteger GCMErrorCode;
@@ -66,10 +85,11 @@ typedef NSInteger GCMErrorCode;
 
 
 
-/// GameCenter Manager helps to manage Game Center in iOS and Mac apps. Report and keep track of high scores, achievements, and challenges for different players. GameCenter Manager also takes care of the heavy lifting - checking internet availability, saving data when offline and uploading it when online, etc.
+/// GameCenterManager helps to manage Game Center in iOS and Mac apps. Report and keep track of high scores, achievements, and challenges for different players. GameCenter Manager also takes care of the heavy lifting - checking internet availability, saving data when offline and uploading it when online, etc.
 @class GameCenterManager;
 @protocol GameCenterManagerDelegate;
-@interface GameCenterManager : NSObject <GKGameCenterControllerDelegate>
+@protocol GameCenterMultiplayerManagerDelegate;
+@interface GameCenterManager : NSObject <GKGameCenterControllerDelegate, GKMatchmakerViewControllerDelegate, GKMatchDelegate>
 
 
 
@@ -79,6 +99,9 @@ typedef NSInteger GCMErrorCode;
 
 /// GameCenterManager delegate property that can be used to set the delegate
 @property (nonatomic, weak) id <GameCenterManagerDelegate> delegate;
+
+/// GameCenterManager multiplayerDelegate property that should be used to set the delegate for multiplayer matches
+@property (nonatomic, weak) id <GameCenterMultiplayerManagerDelegate> multiplayerDelegate;
 
 
 
@@ -203,6 +226,59 @@ typedef NSInteger GCMErrorCode;
 
 
 
+/// Finds and sets up a multiplayer match using the specified parameters and the default MatchmakerViewController
+- (void)findMatchWithMinimumPlayers:(int)minPlayers maximumPlayers:(int)maxPlayers onViewController:(UIViewController *)viewController;
+
+/// Finds and sets up a multiplayer match using the specified parameters and player groups, also uses the default MatchmakerViewController
+- (void)findMatchWithMinimumPlayers:(int)minPlayers maximumPlayers:(int)maxPlayers inPlayerGroup:(int)playerGroup onViewController:(UIViewController *)viewController;
+
+/** Sends data to \b all players in the current multiplayer match using the specified parameters
+ 
+ @discussion Use this method to send data to all players in a match. If you do not need to send data to all players, instead use the alternate method which lets you specify players. 
+ 
+ Send messages at the lowest frequency that allows your game to function well. Your game’s graphics engine may be running at 30 to 60 frames per second, but your networking code can send updates much less frequently.
+ 
+ Use the smallest message format that gets the job done. Messages that are sent frequently or messages that must be received quickly by other participants should be carefully scrutinized to ensure that no unnecessary data is being sent.
+ 
+ Pack your data into the smallest representation you can without losing valuable information. For example, an integer in your program may use 32 or 64 bits to store its data. If the value stored in the integer is always in the range 1 through 10, you can store it in your network message in only 4 bits.
+ 
+ Send messages only to the participants that need the information contained in the message. For example, if your game has two different teams, team-related messages should be sent only to the members of the same team. Sending data to all participants in the match uses up networking bandwidth for little gain.
+ 
+ @param data The data to be sent to all of the players. This should not exceed 1000 bytes for quick sending, and should not exceed 87 kilobytes when sending reliably.
+ @param sendQuickly Specify YES if the data should be sent without ensuring delivery (faster). NO if the data's delivery should be garunteed (slower).
+ @param handler Implement the completion handler to recieve information about the status of the data send. The error parameter may be nil if there was no error. */
+- (BOOL)sendAllPlayersMatchData:(NSData *)data shouldSendQuickly:(BOOL)sendQuickly completion:(void (^)(BOOL success, NSError *error))handler;
+
+/** Sends data to the specified players in the current multiplayer match using the specified parameters
+ 
+ @discussion Use this method to send data to all players in a match. If you do not need to send data to all players, instead use the alternate method which lets you specify players.
+ 
+ Send messages at the lowest frequency that allows your game to function well. Your game’s graphics engine may be running at 30 to 60 frames per second, but your networking code can send updates much less frequently.
+ 
+ Use the smallest message format that gets the job done. Messages that are sent frequently or messages that must be received quickly by other participants should be carefully scrutinized to ensure that no unnecessary data is being sent.
+ 
+ Pack your data into the smallest representation you can without losing valuable information. For example, an integer in your program may use 32 or 64 bits to store its data. If the value stored in the integer is always in the range 1 through 10, you can store it in your network message in only 4 bits.
+ 
+ Send messages only to the participants that need the information contained in the message. For example, if your game has two different teams, team-related messages should be sent only to the members of the same team. Sending data to all participants in the match uses up networking bandwidth for little gain.
+ 
+ @param data The data to be sent to all of the players. This should not exceed 1000 bytes for quick sending, and should not exceed 87 kilobytes when sending reliably.
+ @param players An array of GKPlayer objects to which the data should be sent (can be more efficient if you are not implementing a peer-to-peer connection, or don't need to send to all players).
+ @param sendQuickly Specify YES if the data should be sent without ensuring delivery (faster). NO if the data's delivery should be garunteed (slower).
+ @param handler Implement the completion handler to recieve information about the status of the data send. The error parameter may be nil if there was no error. */
+- (BOOL)sendMatchData:(NSData *)data toPlayers:(NSArray *)players shouldSendQuickly:(BOOL)sendQuickly completion:(void (^)(BOOL success, NSError *error))handler;
+
+/// Disconnects the current (local) player from the multiplayer match. The matchEnded: delegate method will be called after disconnecting, regardless of the number of players.
+- (void)disconnectLocalPlayerFromMatch;
+
+/// @b Readonly. Retrieve the current GKMatch object. May be nil if no match has been setup.
+@property (nonatomic, strong, readonly) GKMatch *multiplayerMatch;
+
+/// @b Readonly. Indicates whether or not the multiplayer match has started (if one has been created).
+@property (nonatomic, assign, readonly) BOOL multiplayerMatchStarted;
+
+
+
+
 /// Returns YES if an active internet connection is available.
 - (BOOL)isInternetAvailable;
 
@@ -228,25 +304,30 @@ typedef NSInteger GCMErrorCode;
 @protocol GameCenterManagerDelegate <NSObject>
 
 #if TARGET_OS_IPHONE
-@required
-/// Required Delegate Method called when the user needs to be authenticated using the GameCenter Login View Controller
-- (void)gameCenterManager:(GameCenterManager *)manager authenticateUser:(UIViewController *)gameCenterLoginController;
+    @required
+    /// Required Delegate Method called when the user needs to be authenticated using the GameCenter Login View Controller
+    - (void)gameCenterManager:(GameCenterManager *)manager authenticateUser:(UIViewController *)gameCenterLoginController;
 #endif
 
 @optional
+
 /// Delegate Method called when the availability of GameCenter changes
 - (void)gameCenterManager:(GameCenterManager *)manager availabilityChanged:(NSDictionary *)availabilityInformation;
 
 /// Delegate Method called when the there is an error with GameCenter or GC Manager
 - (void)gameCenterManager:(GameCenterManager *)manager error:(NSError *)error;
 
+
 /// Sent to the delegate when a score is reported to GameCenter
 - (void)gameCenterManager:(GameCenterManager *)manager reportedScore:(GKScore *)score withError:(NSError *)error;
+
 /// Sent to the delegate when an achievement is reported to GameCenter
 - (void)gameCenterManager:(GameCenterManager *)manager reportedAchievement:(GKAchievement *)achievement withError:(NSError *)error;
 
+
 /// Sent to the delegate when an achievement is saved locally
 - (void)gameCenterManager:(GameCenterManager *)manager didSaveAchievement:(GKAchievement *)achievement;
+
 /// Sent to the delegate when a score is saved locally
 - (void)gameCenterManager:(GameCenterManager *)manager didSaveScore:(GKScore *)score;
 
@@ -271,5 +352,34 @@ typedef NSInteger GCMErrorCode;
 - (void)gameCenterManager:(GameCenterManager *)manager resetAchievements:(NSError *)error __deprecated __unavailable;
 
 @end
+
+
+
+/// GameCenterManager Multiplayer Delegate. Handles multiplayer connections, match data, and other aspects of live multiplayer matchs.
+@protocol GameCenterMultiplayerManagerDelegate <NSObject>
+
+
+@required
+
+/// Sent to the delegate when a live multiplayer match begins
+- (void)gameCenterManager:(GameCenterManager *)manager matchStarted:(GKMatch *)match;
+
+/// Sent to the delegate when a live multiplayer match ends
+- (void)gameCenterManager:(GameCenterManager *)manager matchEnded:(GKMatch *)match;
+
+/// Sent to the delegate when data is recieved on the current device (sent from another player in the match)
+- (void)gameCenterManager:(GameCenterManager *)manager match:(GKMatch *)match didReceiveData:(NSData *)data fromPlayer:(NSString *)playerID;
+
+
+@optional
+
+/// Sent to the delegate when all players are connected. Passes an array of players in the match to the delegate.
+- (void)gameCenterManager:(GameCenterManager *)manager match:(GKMatch *)match didConnectAllPlayers:(NSArray *)gkPlayerArray;
+
+/// Sent to the delegate when a player is disconnected. Passes the disconnected player to the delegate.
+- (void)gameCenterManager:(GameCenterManager *)manager match:(GKMatch *)match playerDidDisconnect:(GKPlayer *)player __OSX_AVAILABLE_STARTING(__OSX_10_9,__IPHONE_7_0);
+
+@end
+
 
 
