@@ -4,6 +4,11 @@ GameCenter Manager helps to manage Game Center in iOS and Mac apps. Report and t
 
 If you like the project, please [star it](https://github.com/nihalahmed/iCloudDocumentSync) on GitHub! Watch the project on GitHub for updates. If you use GameCenter Manager in your app, send an email to contact@iraremedia.com or let us know on Twitter @iRareMedia.
 
+# Feature Branch Warning
+You are currently viewing the feature branch of this GitHub repository. The feature branch contains bleeding edge commits / features, otherwise known as alpha or beta features. Content in this branch may be unstable, bug-ridden, non-working, and undocumented. The sole purpose of this branch is to test and improve on new features that may or may not be included in future (stable) versions.
+
+It is not recommended that you use this branch in a production app of any kind. For stable production ready code, please refer to the master branch.
+
 # Project Features
 GameCenter Manager is a great way to use Game Center in your iOS or OS X app. Below are a few key project features and highlights.
 * Sync, Submit, Save, Retrieve, and Track any Game Center leaderboards, achievements, or challenges in only one line of code.  
@@ -153,8 +158,11 @@ Get challenges for the current game and player on iOS 6 and higher (GameCenterMa
    To present the challenges view controller, call the following method:
  
      [[GameCenterManager sharedManager] presentChallengesOnViewController:self];
-     
-##Player Data
+    
+## Multiplayer Methods
+GameCenter Manager provides a simple way to manage real-time peer-to-peer multiplayer matches. Until documentation is complete, please refer to the header files.
+
+## Player Data
 GameCenterManager provides four different methods to retrieve various bits of data about the current local player. Retrieve a player ID using the following method, but **never** display a player ID in your interface or expose the ID in any way at all - it should only be used to identify a player. If you display a player ID in your app, it will be rejected from the AppStore.
 
     NSString *playerID = [[GameCenterManager sharedManager] localPlayerId];  
@@ -173,7 +181,7 @@ To get any other data about a player use this method:
 
     GKLocalPlayer *player = [[GameCenterManager sharedManager] localPlayerData]; 
 
-## Delegates
+## Main Delegate
 GameCenter Manager delegate methods notify you of the status of Game Center and various other tasks. There is only one required delegate method for iOS, none for OS X.
 
 ###Authenticate User (Required, iOS only)
@@ -227,6 +235,9 @@ The GKAchievement object, `achievement`, is the final achievement that was saved
 
     - (void)gameCenterManager:(GameCenterManager *)manager didSaveAchievement:(GKAchievement *)achievement
 
+## Multiplayer Delegate
+GameCenter Manager provides a separate delegate for multiplayer events: `multiplayerDelegate`. This can be set the same way as the `delegate` property. Until further documentation is completed, please refer to the header files.
+
 ##Constants
 Constants are used throughout GameCenter Manager in error messages and method parameters.
 
@@ -241,4 +252,5 @@ When the `gameCenterManager: error:` delegate is called, one of the following er
     -  `GCMErrorNotAvailable` (1) the feature is not available or GameCenter is not available  
     -  `GCMErrorFeatureNotAvailable` (2) the request feature is not available, check error message for info  
     -  `GCMErrorInternetNotAvailable` (3) no internet connection
-    -  `GCMErrorAchievementDataMissing` (3) could not save achievement because the data was formatted improperly or is missing
+    -  `GCMErrorAchievementDataMissing` (4) could not save achievement because the data was formatted improperly or is missing
+    -  `GCMErrorMultiplayerDataPacketTooLarge` (5) could not send multiplayer data because the data was too large for the specified send method
