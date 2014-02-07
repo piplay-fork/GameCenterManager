@@ -89,7 +89,7 @@ typedef NSInteger GCMErrorCode;
 @class GameCenterManager;
 @protocol GameCenterManagerDelegate;
 @protocol GameCenterMultiplayerManagerDelegate;
-@interface GameCenterManager : NSObject <GKGameCenterControllerDelegate, GKMatchmakerViewControllerDelegate, GKMatchDelegate>
+@interface GameCenterManager : NSObject <GKGameCenterControllerDelegate, GKMatchmakerViewControllerDelegate, GKMatchDelegate, GKLocalPlayerListener>
 
 
 
@@ -229,8 +229,8 @@ typedef NSInteger GCMErrorCode;
 /// Finds and sets up a multiplayer match using the specified parameters and the default MatchmakerViewController
 - (void)findMatchWithMinimumPlayers:(int)minPlayers maximumPlayers:(int)maxPlayers onViewController:(UIViewController *)viewController;
 
-/// Finds and sets up a multiplayer match using the specified parameters and player groups, also uses the default MatchmakerViewController
-- (void)findMatchWithMinimumPlayers:(int)minPlayers maximumPlayers:(int)maxPlayers inPlayerGroup:(int)playerGroup onViewController:(UIViewController *)viewController;
+/// Finds and sets up a multiplayer match using a custom GKMatchRequest object - this allows for ultimate match flexibility (eg. player groups, invited players, player attributes, etc.)
+- (void)findMatchWithGKMatchRequest:(GKMatchRequest *)matchRequest onViewController:(UIViewController *)viewController;
 
 /** Sends data to \b all players in the current multiplayer match using the specified parameters
  
@@ -378,6 +378,12 @@ typedef NSInteger GCMErrorCode;
 
 /// Sent to the delegate when a player is disconnected. Passes the disconnected player to the delegate.
 - (void)gameCenterManager:(GameCenterManager *)manager match:(GKMatch *)match playerDidDisconnect:(GKPlayer *)player __OSX_AVAILABLE_STARTING(__OSX_10_9,__IPHONE_7_0);
+
+/// Sent to the delegate when a player recieves a match invitation. Use this opportunity to begin a match or setup the match request.
+- (void)gameCenterManager:(GameCenterManager *)manager match:(GKMatch *)match didRecieveMatchInvitationForPlayer:(GKPlayer *)invitedPlayer playersToInvite:(NSArray *)players;
+
+/// Sent to the delegate when a player accepts a match invitation. Use this opportunity to handle your match.
+- (void)gameCenterManager:(GameCenterManager *)manager match:(GKMatch *)match didAcceptMatchInvitation:(GKInvite *)invite player:(GKPlayer *)player;
 
 @end
 
