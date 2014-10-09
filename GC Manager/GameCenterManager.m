@@ -176,6 +176,9 @@
                 } else if (!error) {
                     // Authentication handler completed successfully. Re-check availability
                     [self checkGameCenterAvailability];
+                } else {
+                    if ([[self delegate] respondsToSelector:@selector(gameCenterManager:authenticateError:)])
+                        [[self delegate] gameCenterManager:self authenticateError:error];
                 }
             };
 #else

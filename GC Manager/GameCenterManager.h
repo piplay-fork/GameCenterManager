@@ -226,6 +226,8 @@ typedef NSInteger GCMErrorCode;
 @required
 /// Required Delegate Method called when the user needs to be authenticated using the GameCenter Login View Controller
 - (void)gameCenterManager:(GameCenterManager *)manager authenticateUser:(UIViewController *)gameCenterLoginController;
+
+- (void)gameCenterManager:(GameCenterManager *)manager authenticateError:(NSError *)error;
 #endif
 
 @optional
