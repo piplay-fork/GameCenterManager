@@ -48,7 +48,7 @@
 #endif
 
 
-extern NSString *const kReachabilityChangedNotification;
+extern NSString *const kGCReachabilityChangedNotification;
 
 typedef enum  {
 	// Apple NetworkStatus Compatible Names.
