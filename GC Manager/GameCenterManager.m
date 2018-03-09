@@ -282,7 +282,7 @@
                 
                 
                 if (GCMLeaderboards.count > 0) {
-                    GKLeaderboard *leaderboardRequest = [[GKLeaderboard alloc] initWithPlayerIDs:[NSArray arrayWithObject:[self localPlayerId]]];
+                    GKLeaderboard *leaderboardRequest = [GKLeaderboard.alloc initWithPlayers:@[GKLocalPlayer.localPlayer]];
                     
                     [leaderboardRequest setIdentifier:[(GKLeaderboard *)[GCMLeaderboards objectAtIndex:0] identifier]];
                     
@@ -624,11 +624,7 @@
     GKScore *gkScore = nil;
     if ([self checkGameCenterAvailability] == YES) {
 #if TARGET_OS_IPHONE
-        if (GCM_IS_GREATER_THAN_IOS(6, 1)) { // 7.0+
-            gkScore = [[GKScore alloc] initWithLeaderboardIdentifier:identifier];
-        } else {
-            gkScore = [[GKScore alloc] initWithCategory:identifier];
-        }
+        gkScore = [[GKScore alloc] initWithLeaderboardIdentifier:identifier];
 #else
         gkScore = [[GKScore alloc] initWithCategory:identifier];
 #endif
@@ -656,11 +652,7 @@
         }];
     } else {
 #if TARGET_OS_IPHONE
-        if (GCM_IS_GREATER_THAN_IOS(6, 1)) { // 7.0+
-            gkScore = [[GKScore alloc] initWithLeaderboardIdentifier:identifier];
-        } else {
-            gkScore = [[GKScore alloc] initWithCategory:identifier];
-        }
+        gkScore = [[GKScore alloc] initWithLeaderboardIdentifier:identifier];
 #else
         gkScore = [[GKScore alloc] initWithCategory:identifier];
 #endif
