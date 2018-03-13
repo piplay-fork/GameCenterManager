@@ -30,7 +30,6 @@
 @end
 
 @implementation GameCenterManager
-@synthesize isGameCenterAvailable, delegate;
 
 + (GameCenterManager *)sharedManager {
     static GameCenterManager *singleton;
